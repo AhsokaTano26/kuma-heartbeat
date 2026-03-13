@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  kuma-heartbeat:
+    image: tano26/kuma-heartbeat:latest
+    container_name: kuma-heartbeat
+    restart: always
+    environment:
+      - UPTIME_KUMA_URL=https://dash.tano.asia/api/push/bQubvy9CLmSbDDBTQFceZFX26WXKTypk?status=up&msg=OK&ping=
+      - INTERVAL_MINUTES=5

@@ -1,0 +1,9 @@
+# 二进制文件
+heartbeat
+main
+
+# 操作系统文件
+.DS_Store
+
+# 环境变量本地缓存（如果有）
+.env
