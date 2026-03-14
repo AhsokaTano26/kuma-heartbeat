@@ -5,5 +5,5 @@ services:
     container_name: kuma-heartbeat
     restart: always
     environment:
-      - UPTIME_KUMA_URL=https://dash.tano.asia/api/push/bQubvy9CLmSbDDBTQFceZFX26WXKTypk?status=up&msg=OK&ping=
+      - UPTIME_KUMA_URL=
       - INTERVAL_MINUTES=5
