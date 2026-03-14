@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -10,35 +9,48 @@ import (
 )
 
 func main() {
-	// 获取环境变量
 	url := os.Getenv("UPTIME_KUMA_URL")
 	intervalStr := os.Getenv("INTERVAL_MINUTES")
 
 	if url == "" {
-		log.Fatal("错误: 请设置环境变量 UPTIME_KUMA_URL")
+		fmt.Println("错误: 未设置 UPTIME_KUMA_URL")
+		os.Exit(1)
 	}
 
-	interval, err := strconv.Atoi(intervalStr)
-	if err != nil || interval <= 0 {
-		interval = 5 // 默认 5 分钟
+	interval, _ := strconv.Atoi(intervalStr)
+	if interval <= 0 {
+		interval = 5
 	}
 
-	fmt.Printf("🚀 启动心跳服务\n目标: %s\n频率: 每 %d 分钟一次\n", url, interval)
-
+	// 增加超时到 30s，并禁用 Keep-Alives 避免连接池失效
 	client := &http.Client{
-		Timeout: 15 * time.Second,
-		// 默认会跟随最多 10 个跳转，足以处理 302
+		Timeout: 30 * time.Second,
+		Transport: &http.Transport{
+			DisableKeepAlives: true,
+		},
 	}
+
+	fmt.Printf("🚀 强化版心跳启动 | 间隔: %dmin\n", interval)
 
 	for {
-		resp, err := client.Get(url)
 		currentTime := time.Now().Format("2006-01-02 15:04:05")
+		
+		// 最多重试 3 次
+		success := false
+		for i := 1; i <= 3; i++ {
+			resp, err := client.Get(url)
+			if err == nil {
+				fmt.Printf("[%s] ✅ 成功 (尝试 %d/3): %s\n", currentTime, i, resp.Status)
+				resp.Body.Close()
+				success = true
+				break
+			}
+			fmt.Printf("[%s] ⚠️ 失败 (尝试 %d/3): %v\n", currentTime, i, err)
+			time.Sleep(5 * time.Second) // 重试间隔
+		}
 
-		if err != nil {
-			fmt.Printf("[%s] ❌ 请求失败: %v\n", currentTime, err)
-		} else {
-			fmt.Printf("[%s] ✅ 响应状态: %s\n", currentTime, resp.Status)
-			resp.Body.Close()
+		if !success {
+			fmt.Printf("[%s] ❌ 本轮汇报彻底失败\n", currentTime)
 		}
 
 		time.Sleep(time.Duration(interval) * time.Minute)
